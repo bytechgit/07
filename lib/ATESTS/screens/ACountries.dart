@@ -13,7 +13,7 @@ class _CountriesState extends State<Countries> {
 
   String searchText = '';
 
-  var oneValue = 'us';
+  int selectedCountryIndex = short.indexOf('us');
 
   @override
   void initState() {
@@ -41,16 +41,17 @@ class _CountriesState extends State<Countries> {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     if (prefs.getString('selected_radio') != null) {
       setState(() {
-        oneValue = prefs.getString('selected_radio')!;
+        selectedCountryIndex = prefs.getInt('countryRadio')!;
       });
     }
   }
 
-  Future<void> setValue(String value) async {
+  Future<void> setValue(int countryIndex) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     setState(() {
-      oneValue = value.toString();
-      prefs.setString('selected_radio', oneValue);
+      selectedCountryIndex = countryIndex;
+      prefs.setInt('countryRadio', selectedCountryIndex);
+      prefs.setString('selected_radio', long[selectedCountryIndex]);
     });
   }
 
@@ -120,13 +121,10 @@ class _CountriesState extends State<Countries> {
                   itemCount: filtedlist.length,
                   controller: ScrollController(),
                   separatorBuilder: (_, __) => const SizedBox(height: 8),
-                  itemBuilder: (context, index) => MyRadioListTile<String>(
-                      value: filtedlist[index],
-                      groupValue: oneValue,
-                      title: filtedlist[index],
-                      onChanged: (value) => setValue(
-                            value.toString(),
-                          )),
+                  itemBuilder: (context, index) => MyRadioListTile(
+                      selectedIndex: selectedCountryIndex,
+                      index: long.indexOf(filtedlist[index]),
+                      onChanged: (value) => setValue(value)),
                 ),
               ),
             ],
@@ -137,23 +135,21 @@ class _CountriesState extends State<Countries> {
   }
 }
 
-class MyRadioListTile<T> extends StatelessWidget {
-  final T value;
-  final T groupValue;
-  final String title;
-  final ValueChanged<T?> onChanged;
+class MyRadioListTile extends StatelessWidget {
+  final int selectedIndex;
+  final int index;
+  final ValueChanged<int> onChanged;
 
   const MyRadioListTile({
-    required this.value,
-    required this.groupValue,
     required this.onChanged,
-    required this.title,
+    required this.selectedIndex,
+    required this.index,
   });
 
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      onTap: () => onChanged(value),
+      onTap: () => onChanged(index),
       child: Container(
         height: 41,
         child: Container(
@@ -164,16 +160,14 @@ class MyRadioListTile<T> extends StatelessWidget {
   }
 
   Widget get _customRadioButton {
-    final isSelected = value == groupValue;
-
-    var countryIndex = long.indexOf(title);
-    String flag = short[countryIndex];
-
+    String flag = short[index];
     return Container(
       width: 200,
       padding: EdgeInsets.symmetric(horizontal: 3),
       decoration: BoxDecoration(
-        color: isSelected ? Color.fromARGB(255, 111, 111, 111) : Colors.white,
+        color: index == selectedIndex
+            ? Color.fromARGB(255, 111, 111, 111)
+            : Colors.white,
         borderRadius: BorderRadius.circular(10),
       ),
       child: Row(
@@ -191,10 +185,11 @@ class MyRadioListTile<T> extends StatelessWidget {
             child: Container(
               width: 74,
               child: Text(
-                title,
+                long[index],
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  color: isSelected ? Colors.white : Colors.grey[600]!,
+                  color:
+                      index == selectedIndex ? Colors.white : Colors.grey[600]!,
                   fontSize: 10,
                 ),
               ),

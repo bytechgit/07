@@ -31,11 +31,12 @@ class _MyHomeScreenState extends State<MyHomeScreen> {
   var messages = 'true';
   var global = 'true';
 
-  String oneValue = '';
-  String twoValue = '';
-  String threeValue = '';
+  //String oneValue = '';
+  // String twoValue = '';
+  //String threeValue = '';
+  int selectedCountryIndex = -1;
 
-  String flag = 'us';
+  //String flag = 'us';
   List<Post> postsList = [];
   StreamSubscription? loadDataStream;
   StreamController<Post> updatingStream = StreamController.broadcast();
@@ -43,10 +44,12 @@ class _MyHomeScreenState extends State<MyHomeScreen> {
   @override
   void initState() {
     super.initState();
-    getValueG();
-    getValueM();
-    getValue();
-    initList();
+    loadCountryFilterValue();
+    getValueG().then(((value) => getValueM().then((value) =>
+        initList()))); // this has to be like this, to wait for the get functions to be executed first
+    //new changes
+    //we are changed ACountries file,
+    //-----old changes
     //we are initialy filling postList when page is loaded.
     //every elements is subscribed on loadDataStream and listening on the event that is meant to it. (look at the changes in the Post class)
   }
@@ -68,7 +71,7 @@ class _MyHomeScreenState extends State<MyHomeScreen> {
             ? FirebaseFirestore.instance.collection('posts')
             : FirebaseFirestore.instance
                 .collection('posts')
-                .where("country", isEqualTo: flag))
+                .where("country", isEqualTo: short[selectedCountryIndex]))
         .where("global", isEqualTo: global)
         .orderBy("score", descending: true)
         .orderBy("datePublished", descending: false)
@@ -129,6 +132,9 @@ class _MyHomeScreenState extends State<MyHomeScreen> {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     setState(() {
       messages = valuem.toString();
+      if (valuem == "true") {
+        initList();
+      }
       prefs.setString('selected_radio4', messages);
     });
   }
@@ -200,12 +206,6 @@ class _MyHomeScreenState extends State<MyHomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    var countryIndex = long.indexOf(threeValue);
-    // String flag = '';
-
-    if (countryIndex >= 0) {
-      flag = short[countryIndex];
-    }
     return SafeArea(
       child: Scaffold(
         backgroundColor: Color.fromARGB(255, 236, 234, 234),
@@ -229,10 +229,11 @@ class _MyHomeScreenState extends State<MyHomeScreen> {
                           child: IconButton(
                             onPressed: () {
                               Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                          builder: (context) => Countries()))
-                                  .then((value) => {getValue()});
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) => Countries())).then(
+                                  (value) =>
+                                      {loadCountryFilterValue(), initList()});
                             },
                             icon: const Icon(Icons.filter_list,
                                 color: Colors.black),
@@ -339,13 +340,13 @@ class _MyHomeScreenState extends State<MyHomeScreen> {
                                         ),
                                       ),
                                       const SizedBox(width: 4),
-                                      threeValue == ''
+                                      selectedCountryIndex == -1
                                           ? Container()
                                           : Container(
                                               width: 24,
                                               height: 14,
                                               child: Image.asset(
-                                                  'icons/flags/png/${flag}.png',
+                                                  'icons/flags/png/${short[selectedCountryIndex]}.png',
                                                   package: 'country_icons'),
                                             ),
                                     ],
@@ -537,7 +538,8 @@ class _MyHomeScreenState extends State<MyHomeScreen> {
                           stream: FirebaseFirestore.instance
                               .collection('polls')
                               .where("global", isEqualTo: global)
-                              .where("country", isEqualTo: flag)
+                              .where("country",
+                                  isEqualTo: short[selectedCountryIndex])
                               .orderBy("totalVotes", descending: true)
                               .orderBy("datePublished", descending: false)
                               .snapshots(),
@@ -590,12 +592,14 @@ class _MyHomeScreenState extends State<MyHomeScreen> {
     return Icon(data, size: iconSize.shortestSide, color: Colors.white);
   }
 
-  getValue() async {
+  loadCountryFilterValue() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     setState(() {
-      oneValue = prefs.getString('selected_radio') ?? '';
-      twoValue = prefs.getString('selected_radio1') ?? '';
-      threeValue = prefs.getString('selected_radio2') ?? '';
+      selectedCountryIndex = prefs.getInt('countryRadio') ?? -1;
+      // prefs.getInt('selected_radio') ?? '';
+      //oneValue = prefs.getString('selected_radio') ?? '';
+      //twoValue = prefs.getString('selected_radio1') ?? '';
+      //threeValue = prefs.getString('selected_radio2') ?? '';
     });
   }
 }
