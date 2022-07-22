@@ -229,11 +229,13 @@ class _MyHomeScreenState extends State<MyHomeScreen> {
                           child: IconButton(
                             onPressed: () {
                               Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                      builder: (context) => Countries())).then(
-                                  (value) =>
-                                      {loadCountryFilterValue(), initList()});
+                                      context,
+                                      MaterialPageRoute(
+                                          builder: (context) => Countries()))
+                                  .then((value) async {
+                                await loadCountryFilterValue();
+                                initList();
+                              });
                             },
                             icon: const Icon(Icons.filter_list,
                                 color: Colors.black),
